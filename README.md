@@ -3,6 +3,13 @@
 
 Python and C++ code implementations for the analysis of event-camera recordings obtained from fluid flows.
 
+Input: raw event data represented as time-surfaces
+
+![Pipeline](https://github.com/cewdlr/ebiv/blob/main/images/wallflow4_dense_3_0010.png)
+
+Output: Recovered velocity field
+
+![Pipeline](https://github.com/cewdlr/ebiv/blob/main/images/wallflow4_dense_3_corr_0010.png)
 
 [Associated publication] "Event-based Imaging Velocimetry - An Assessment of Event-based Cameras for the Measurement of Fluid Flows"
 (Exp. Fluids, under review)
