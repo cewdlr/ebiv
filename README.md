@@ -14,7 +14,7 @@ Output: Recovered velocity field
 ## Publication
 
 [Associated publication] "Event-based Imaging Velocimetry - An Assessment of Event-based Cameras for the Measurement of Fluid Flows"
-(Exp. Fluids, under review)
+(Experiments in Fluids, accepted 24 April 2022, to appear)
 
 [Submitted preprint] https://arxiv.org/abs/2202.11178
 
