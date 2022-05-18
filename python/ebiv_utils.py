@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-@author: C.Willert (cewdlr)
+@author: Chris Willert (cewdlr)
+
+CopyPolicy: 
+    Released under the terms of the LGPLv2.1 or later, see LGPL.TXT
 
 Purpose:
     various utilities for handling event-based imaging data (EBI)
@@ -216,12 +219,8 @@ class EBISubVolume(object):
 
         if sample != None:
             self.evData = sample
-            self.binning = sample['binning']
             roiW = sample['roiX'][1] - sample['roiX'][0]
             roiH = sample['roiY'][1] - sample['roiY'][0]
-            if self.binning > 1:
-                roiW = roiW // self.binning
-                roiH = roiH // self.binning
             self.warpData = np.zeros([roiH,roiW],dtype=np.float32)
             self._calcCentroid()
 
@@ -234,8 +233,8 @@ class EBISubVolume(object):
     def renderSample(self):
         if self.evData['time'].size == 0:
             return np.array([],dtype=np.float32)
-        roiW = (self.evData['roiX'][1] - self.evData['roiX'][0]) // self.binning
-        roiH = (self.evData['roiY'][1] - self.evData['roiY'][0]) // self.binning
+        roiW = (self.evData['roiX'][1] - self.evData['roiX'][0])
+        roiH = (self.evData['roiY'][1] - self.evData['roiY'][0])
         sumImg = np.zeros((roiH,roiW))
         sumImg[np.int32(self.evData['y']),\
                np.int32(self.evData['x'])] = self.evData['time'] 
@@ -248,8 +247,8 @@ class EBISubVolume(object):
     def asVolume(self, nt:int):
         if self.evData['time'].size == 0:
             return np.array([],dtype=np.float32)
-        nx = (self.evData['roiX'][1] - self.evData['roiX'][0]) // self.binning
-        ny = (self.evData['roiY'][1] - self.evData['roiY'][0]) // self.binning
+        nx = (self.evData['roiX'][1] - self.evData['roiX'][0])
+        ny = (self.evData['roiY'][1] - self.evData['roiY'][0])
         dt = self.evData['roiTime'][1]-self.evData['roiTime'][0]
         vol3d = np.zeros([nt*ny*nx])
         # produces indices in time
@@ -265,9 +264,27 @@ class EBISubVolume(object):
     def sumWarpedEvents(self, \
                   velX:float,   # in [px/us]
                   velY:float,   # in [px/us]
-                  useNearest = True,
+                  interpolation='nearest', #useNearest = True,
+                  objectiveFxn='var',
                   dbg=False,
                   ):
+        ''' 
+        Compute image of warped events (IWE) for given velocity (velX,velY) and then
+        apply objective function on the IWE.
+        Makes use of various objective ("reward") functions as suggested by Stoffregen & Kleeman (2019)
+        "Event Cameras, Contrast Maximization and Reward Functions: an Analysis", CVPR19
+        
+        Implemented objective functions:
+            'var' - variance of warped events
+            'SumSq' - sum of squares
+            'SumExp' - sum of exponetials
+            'R1'
+            'ISOA' - inverse sum of accumulations 
+            
+        Returns [mean of warped events, 
+                 value of objective fxn for warped events, 
+                 events used]
+        '''
         vx = -velX
         vy = -velY
         # pos = vel * time --> vel = pos / time
@@ -283,7 +300,7 @@ class EBISubVolume(object):
         [roiH,roiW] = self.warpData.shape
         self.warpData[:,:] = 0
         cnt = 0
-        if useNearest:  # faster than interpolation
+        if interpolation in ['nearest']:  # faster than interpolation
             pixX = np.int32(np.round(warpX))  # i pixel
             pixY = np.int32(np.round(warpY))  # j pixel
             for px,py in zip(pixX,pixY):
@@ -311,16 +328,40 @@ class EBISubVolume(object):
                     self.warpData[py+1,px  ] += wBL
                     self.warpData[py+1,px+1] += wBR
                     cnt += 1    # number of events used
-                
+        
+        # compute reward function
         mean = self.warpData.mean()
-        var = self.warpData.var()
+        if objectiveFxn.lower() in ['var', 'variance']:
+            fxnVal = self.warpData.var()
+        # Sum of squares
+        elif objectiveFxn.lower() in ['sumsq', 'sum_of_squares']:
+            fxnVal = (self.warpData**2).sum()
+        # Sum of exponentials
+        elif objectiveFxn.lower() in ['sumexp', 'sum_of_exponentials']:
+            fxnVal = np.exp(self.warpData).sum()
+        # R1 ((Stoffregen et al, Event Cameras, Contrast Maximization and 
+        # Reward Functions: an Analysis, CVPR19)
+        elif objectiveFxn.lower() in ['r1']:
+            p = 3
+            sos = np.mean(self.warpData*self.warpData)
+            exp = np.exp(-p*self.warpData.astype(np.double))
+            sosa = np.sum(exp)
+            fxnVal = sos*sosa
+        elif objectiveFxn.lower() in ['isoa']:
+            # inverse sum of accumulations 
+            thresh = 1
+            fxnVal = np.sum(np.where(self.warpData>thresh, 1, 0))
+        elif objectiveFxn.lower() in ['moa']:
+            fxnVal = np.max(self.warpData)
+        else:
+            raise ValueError('Reward-function not specified')
         eventsUsed = cnt
 
-        return mean, var, eventsUsed
+        return mean, fxnVal, eventsUsed
 
 class EBIDataSet(object):
     """
-    Container for event data; allow reading, writing and sampling
+    Container for event data; allows reading, writing and sampling
     """
     def __init__(self, rawFile='', dbg=False, offset=0, duration=100000):
         self.evData = []
@@ -428,9 +469,13 @@ class EBIDataSet(object):
             
         return self.currentSample
 
-def CalcVarForShift(VxIN, VyIN, sample):
+def CalcObjectiveForShift(VxIN, VyIN, sample, interpolation='nearest',
+                    objectiveFxn='var',
+                    ):
     """
-    Calculate map of variances for specific velocity candidates VxIN and VyIN
+    Calculate map of objective values for specified velocity candidates VxIN and VyIN
+    
+    See EBISubVolume.sumWarpedEvents() for details
     """
     res = []
     evList = []
@@ -438,8 +483,9 @@ def CalcVarForShift(VxIN, VyIN, sample):
         for Vx in VxIN:
             vx = Vx/1000
             vy = Vy/1000
-            mean, var, evs = sample.sumWarpedEvents(vx,vy, useNearest=True )
-            res.append(var)
+            mean, rewardValue, evs = sample.sumWarpedEvents(
+                vx,vy, interpolation=interpolation, objectiveFxn=objectiveFxn )
+            res.append(rewardValue)
             evList.append(evs)
     
     mappedResult = np.array(res).reshape(VyIN.size,VxIN.size)
@@ -447,7 +493,7 @@ def CalcVarForShift(VxIN, VyIN, sample):
     
     return mappedResult, eventsResult
 
-def PeakFit3pt(x0:float, vals, dx):
+def PeakFit3pt(x0:float, vals, dx, doExponentialFit=False):
     """
     Perform parabolic peak fit on 3-valued array
 
@@ -459,11 +505,16 @@ def PeakFit3pt(x0:float, vals, dx):
         array with 3 intensity values around maximum
     dx : float
         grid spacing between values
+    doExponentialFit : bool (optional) 
+        fit Gaussian peak
 
     Returns estimated position of maximum
     """
     # sub-pixel fit
     [a,b,c] = vals[0:3] # values for pos [-1,0,+1]
+    if doExponentialFit and np.all(vals[0:3] > 0):
+        # compute natural log - works for positive values only
+        [a,b,c] = np.log(vals[0:3])
     denom = ((a+c)*2 -b*4)
     if (denom == 0):
         return x0
@@ -471,37 +522,42 @@ def PeakFit3pt(x0:float, vals, dx):
     #print(subPix)
     return x0 + (subPix * dx)
 
-def FindPeakInVarianceMap(
-        varData2D, 
+def FindPeakInObjectiveMap(
+        imgData2D, 
         eventCount2D, 
         VxIN, VyIN, 
+        doExponentialFit=False,
         dbg=False
         ):
     """
-    Look for highest signal in 2d array of 'varData2D' and associate
+    Look for highest signal in 2d array of 'imgData2D' and associate
     with pixel velocity candidate list [VxIN,VyIN].
     If possible, perform 3-point peak fit to estimate position of most probale
     pixel velocity.
     
+    To fit a Gaussian peak set doExponentialFit=True
+    
     Returns estimated pixel velocity [Vx,Vy], associated peak variance and event count
     """
-    [ny,nx] = varData2D.shape
-    if varData2D.var() == 0:
-        return [0.,0]
-    [iyMax,ixMax] = np.unravel_index(np.argmax(varData2D), varData2D.shape)
+    [ny,nx] = imgData2D.shape
+    if imgData2D.var() == 0:
+        return [0.,0,0,0]
+    [iyMax,ixMax] = np.unravel_index(np.argmax(imgData2D), imgData2D.shape)
     Vx = VxIN[ixMax]
     Vy = VyIN[iyMax]
     dx = VxIN[1]-VxIN[0]
     dy = VyIN[1]-VyIN[0]
-    maxVar = varData2D[iyMax,ixMax]
+    maxVar = imgData2D[iyMax,ixMax]
     maxEvents = eventCount2D[iyMax,ixMax]
     if dbg:
-        print("peakX: " + str(varData2D[iyMax,ixMax-1:ixMax+2].flatten()))
-        print("peakY: " + str(varData2D[iyMax-1:iyMax+2,ixMax].flatten()))
+        print("peakX: " + str(imgData2D[iyMax,ixMax-1:ixMax+2].flatten()))
+        print("peakY: " + str(imgData2D[iyMax-1:iyMax+2,ixMax].flatten()))
     if(ixMax > 0) and (ixMax+1 < nx):
-        Vx = PeakFit3pt(Vx, varData2D[iyMax,ixMax-1:ixMax+2].flatten(), dx)
+        Vx = PeakFit3pt(Vx, imgData2D[iyMax,ixMax-1:ixMax+2].flatten(), dx,
+                        doExponentialFit=doExponentialFit)
     if(iyMax > 0) and (iyMax+1 < ny):
-        Vy = PeakFit3pt(Vy, varData2D[iyMax-1:iyMax+2,ixMax].flatten(), dy)
+        Vy = PeakFit3pt(Vy, imgData2D[iyMax-1:iyMax+2,ixMax].flatten(), dy,
+                        doExponentialFit=doExponentialFit)
 
     return [Vx,Vy,maxVar, maxEvents]
 
@@ -534,7 +590,7 @@ def FFT_CrossCorr2D(A_in,B_in):
             #corrSum += fftconvolve(b, a)/(a.std()*b.std())
     return corr3D /(nz*ny*nx)
 
-def FindCorrPeak2D(corr):
+def FindCorrPeak2D(corr, doExponentialFit=True):
     """
     Find (postive) peak in 2D correlation map
     
@@ -545,9 +601,11 @@ def FindCorrPeak2D(corr):
     dx = ixMax - nx//2
     dy = iyMax - ny//2
     if(ixMax > 0) and (ixMax+1 < nx):
-        dx = PeakFit3pt(dx, corr[iyMax,ixMax-1:ixMax+2].flatten(), 1)
+        dx = PeakFit3pt(dx, corr[iyMax,ixMax-1:ixMax+2].flatten(), 1,
+                        doExponentialFit=doExponentialFit)
     if(iyMax > 0) and (iyMax+1 < ny):
-        dy = PeakFit3pt(dy, corr[iyMax-1:iyMax+2,ixMax].flatten(), 1)
+        dy = PeakFit3pt(dy, corr[iyMax-1:iyMax+2,ixMax].flatten(), 1,
+                        doExponentialFit=doExponentialFit)
     return dx, dy, corr[iyMax,ixMax]
 
     

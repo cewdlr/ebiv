@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """
+@author: Chris Willert (cewdlr)
 
-@author: cewdlr
+CopyPolicy: 
+    Released under the terms of the LGPLv2.1 or later, see LGPL.TXT
 
 Purpose:
     check I/O of own event format file

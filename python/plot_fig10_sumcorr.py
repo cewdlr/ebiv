@@ -1,68 +1,64 @@
 # -*- coding: utf-8 -*-
 """
-@author: cewdlr
+@author: Chris Willert (cewdlr)
+
+CopyPolicy: 
+    Released under the terms of the LGPLv2.1 or later, see LGPL.TXT
 
 Purpose:
     generate Fig.10 of EBIV ExiF-Paper
     showing sum-of-correlation method on actual data
 """
 
-#from pyebiv import EBIV
 from ebiv_utils import EBIDataSet,FFT_CrossCorr2D,FindCorrPeak2D
+from ebiv_params import EBIV_Config
 
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from plot_utils import SetTimesFont,PlacePlotLabel
+
 
 useROI = 0      # plots small ROIs shown in Fig.8
 savePlot = 0    # generate output
 
-dataDir = 'Y:/Documents/GitHub/ebiv/sample_data/'
-fileStub = 'wallflow4_dense_3'
-fnRAW = dataDir + fileStub + '.raw'
-plotDir = dataDir + 'plots/'
+#%% Processing parameters
+dataDir = '../sample_data/'
+cfgFile = dataDir + 'ebiv_params.cfg'
+cfg = EBIV_Config(cfgFile)
+
+fnRAW = cfg.rawFile()
 
 if not os.path.isfile(fnRAW):
     raise IOError('File not found: ' + fnRAW)
-if not os.path.exists(plotDir):
-    os.makedirs(plotDir)
+if not os.path.exists(cfg.plotDir):
+    os.makedirs(cfg.plotDir)
 
-#%% Processing parameters
-t0 = 10000
-duration = 10000
-dt = duration
-t_sep = 3000    # separation in time for event sampling
-NT = 40     # number of planes in sub-volumes
+SetTimesFont()
 
-szSample = [40,40]  # size of sampling area [W,H]
-polarity = 'pos'
+szSample = [cfg.sampleW,cfg.sampleH]  # size of sampling area [W,H]
 # sampling location near bottom wall
-posX1 = 300
-posY1 = 600
-posX2 = 915
-posY2 = 600
-posSample1 = [posX1,posY1]
-posSample2 = [posX2,posY2]
-posSample = posSample2
-timeSample = [t0,t0+dt]
-fnSuffix = '_t%.fms_tau%.fms_x%d_y%d' % ((dt/1000), (t_sep/1000), posSample[0], posSample[1])
+posSample = cfg.sampleLocation2
+timeSample = [cfg.t_start, cfg.t_start+cfg.t_sample]
+fnSuffix = '_t%.fms_tau%.fms_x%d_y%d' % \
+    ((cfg.t_sample/1000), (cfg.t_sep/1000), posSample[0], posSample[1])
 
 #%% Load events from file and compute variance map
 print("Loading events from: " + fnRAW )
 ev = EBIDataSet(fnRAW)
 
-# get samples
-s = ev.sampleEvents(posSample, szSample, timeSample, polarity=polarity)
-timeSample1 = [timeSample[0]-t_sep/2, timeSample[1]-t_sep/2]
-timeSample2 = [timeSample[0]+t_sep/2, timeSample[1]+t_sep/2]
-s1 = ev.sampleEvents(posSample, szSample, timeSample1, polarity=polarity)
-s2 = ev.sampleEvents(posSample, szSample, timeSample2, polarity=polarity)
+#%% get samples
+s = ev.sampleEvents(posSample, szSample, timeSample, polarity=cfg.polarity)
+timeSample1 = [timeSample[0]-cfg.t_sep//2, timeSample[1]-cfg.t_sep//2]
+timeSample2 = [timeSample[0]+cfg.t_sep//2, timeSample[1]+cfg.t_sep//2]
+s1 = ev.sampleEvents(posSample, szSample, timeSample1, polarity=cfg.polarity)
+s2 = ev.sampleEvents(posSample, szSample, timeSample2, polarity=cfg.polarity)
 
 # rearrange sampled events into NT-slices
-vol1 = s1.asVolume(NT)
-vol2 = s2.asVolume(NT)
+vol1 = s1.asVolume(cfg.NT)
+vol2 = s2.asVolume(cfg.NT)
 
 # compute cross-correlations for at NT slice pairs
 corr = FFT_CrossCorr2D(vol1,vol2)
@@ -70,8 +66,8 @@ corr = FFT_CrossCorr2D(vol1,vol2)
 corr2D = corr.sum(axis=0)
 corr_dx,corr_dy,maxCorr = FindCorrPeak2D(corr2D)
 # pixel velocity is obtained by figuring in the time-separation of the samples
-corr_vx = (corr_dx/t_sep)*1000
-corr_vy = (corr_dy/t_sep)*1000
+corr_vx = (corr_dx/cfg.t_sep)*1000
+corr_vy = (corr_dy/cfg.t_sep)*1000
 print('Shift dx:%.4f dy:%.4f pixel --> vx:%.4f vy:%.4f pixel/ms (corr: %.4f)' \
       %(corr_dx, -corr_dy, corr_vx, -corr_vy, maxCorr))
 
@@ -96,19 +92,23 @@ for ax in [ax0, ax1, ax2]:
     ax.set_facecolor(bgcolor)
 extent=[-nc/2,nc/2,-nr/2,nr/2]
 
-imgPos0 = ax0.imshow((sumImg1-dt/2)/1000, cmap=cmap2, interpolation='nearest', 
+imgPos0 = ax0.imshow((sumImg1-cfg.t_sample/2)/1000, 
+                     cmap=cmap2, interpolation='nearest', 
                      extent=extent,
                      origin='lower',
-                     vmin=-dt/(2*1000),vmax=dt/(2*1000))
-imgPos1 = ax1.imshow((sumImg2-dt/2)/1000, cmap=cmap2, interpolation='nearest', 
-                      extent=extent,
-                      origin='lower',
-                      vmin=-dt/(2*1000),vmax=dt/(2*1000))
+                     vmin=-cfg.t_sample/(2*1000),
+                     vmax=cfg.t_sample/(2*1000))
+imgPos1 = ax1.imshow((sumImg2-cfg.t_sample/2)/1000, 
+                     cmap=cmap2, interpolation='nearest', 
+                     extent=extent,
+                     origin='lower',
+                     vmin=-cfg.t_sample/(2*1000),
+                     vmax=cfg.t_sample/(2*1000))
 # add vector
 corr_dy = -corr_dy  # origin at top of image!
 xc = -corr_dx/2
 yc = corr_dy/2
-arrow = mpatches.FancyArrowPatch((xc, yc), (xc+corr_dx, yc-corr_dy), ec='k', fc='k',
+arrow = mpatches.FancyArrowPatch((xc, yc), (xc+corr_dx, yc+corr_dy), ec='k', fc='k',
                                  mutation_scale=15, mutation_aspect=1, )
 ax0.add_patch(arrow)
 
@@ -126,11 +126,11 @@ imgPos2 = ax2.imshow(corr2D_roi, cmap=cmapCorr, interpolation='nearest',
 ax2.axhline(0, color="white", ls='--', lw=0.5)
 ax2.axvline(0, color="white", ls='--', lw=0.5)
 
-t_range = [-dt/2,dt/2]
-T1 = [t_range[0]-t_sep/2,t_range[1]-t_sep/2]
-T2 = [t_range[0]+t_sep/2,t_range[1]+t_sep/2]
-Tcorr = [-(dt)/2,(dt)/2]
-aspect=(nc*1000)/(dt)
+t_range = [-cfg.t_sample/2, cfg.t_sample/2]
+T1 = [t_range[0]-cfg.t_sep/2, t_range[1]-cfg.t_sep/2]
+T2 = [t_range[0]+cfg.t_sep/2, t_range[1]+cfg.t_sep/2]
+Tcorr = [-(cfg.t_sample)/2,(cfg.t_sample)/2]
+aspect=(nc*1000)/(cfg.t_sample)
 ax3.axhline(0, color="red", ls='--', lw=0.5)
 ax4.axhline(0, color="red", ls='--', lw=0.5)
 vol1_sum = vol1.sum(axis=1)
@@ -138,26 +138,29 @@ vol2_sum = vol2.sum(axis=1)
 vol1_sum[np.where(vol1_sum>1)] =1
 vol2_sum[np.where(vol2_sum>1)] =1
 # show X-time projection No.1
-imgPos3 = ax3.imshow(vol1_sum*10, cmap='gray_r', interpolation='nearest', 
-                      extent=[-nc/2,nc/2,T1[0]/1000,T1[1]/1000],
-                      origin='lower',
-                      aspect=aspect,
-                      vmax = 10
-                      ) 
+imgPos3 = ax3.imshow(vol1_sum*10, 
+                     cmap='gray_r', interpolation='nearest', 
+                     extent=[-nc/2,nc/2,T1[0]/1000,T1[1]/1000],
+                     origin='lower',
+                     aspect=aspect,
+                     vmax = 10
+                     ) 
 # show X-time projection No.2 including No.1 in dimmed gray
-imgPos4 = ax4.imshow(vol2_sum*10 + vol1_sum, cmap='gray_r', interpolation='nearest', 
-                      extent=[-nc/2,nc/2,T2[0]/1000,T2[1]/1000],
-                      origin='lower',
-                      aspect=aspect,
-                      vmax = 10
-                      ) 
+imgPos4 = ax4.imshow(vol2_sum*10 + vol1_sum, 
+                     cmap='gray_r', interpolation='nearest', 
+                     extent=[-nc/2,nc/2,T2[0]/1000,T2[1]/1000],
+                     origin='lower',
+                     aspect=aspect,
+                     vmax = 10
+                     ) 
 
 # show X-time projection of correlation NT planes
 nz,ny,nx = corr.shape
-aspect=(nc*1000)/(dt)
+aspect=(nc*1000)/(cfg.t_sample)
 nc2 = (nc*2)+1
 corrProj = corr.sum(axis=1)[:,c1:c1+nc]
-imgPos5 = ax5.imshow(corrProj, cmap=cmapCorr, interpolation='nearest', 
+imgPos5 = ax5.imshow(corrProj, 
+                     cmap=cmapCorr, interpolation='nearest', 
                      origin='lower',
                      vmin = 0,
                      aspect=aspect,
@@ -181,22 +184,16 @@ ax0.set_ylabel('Y [pixel]', fontsize=szTitle)
 ax3.set_ylabel('Time [ms]', fontsize=szTitle)
 ax1.set(yticklabels=[])  
 
-# place labels
-def placePlotLabel(ax, pos:[float,float], lbl:str):
-    [x1,x2] = ax.get_xlim()
-    [y1,y2] = ax.get_ylim()
-    ax.text(x1+pos[0]*(x2-x1), y1+pos[1]*(y2-y1), lbl, fontsize=16)
-    
-placePlotLabel(ax0, [-0.4,1.1], "a)")
-placePlotLabel(ax1, [-0.3,1.1], "b)")
-placePlotLabel(ax2, [-0.4,1.15], "c)")
-placePlotLabel(ax3, [-0.4,1.05], "d)")
-placePlotLabel(ax4, [-0.3,1.05], "e)")
-placePlotLabel(ax5, [-0.4,1.05], "f)")
+PlacePlotLabel(ax0, [-0.4,1.1], "a)")
+PlacePlotLabel(ax1, [-0.3,1.1], "b)")
+PlacePlotLabel(ax2, [-0.4,1.15], "c)")
+PlacePlotLabel(ax3, [-0.4,1.05], "d)")
+PlacePlotLabel(ax4, [-0.3,1.05], "e)")
+PlacePlotLabel(ax5, [-0.4,1.05], "f)")
 
 plt.tight_layout()
 if savePlot:
-    fnPlot = plotDir + 'samples_corr' + fnSuffix
+    fnPlot = cfg.plotDir + 'samples_corr' + fnSuffix
     plt.savefig(fnPlot+'.png', dpi=200)
     plt.savefig(fnPlot+'.pdf', dpi=200)
     print('plot saved in: ' + fnPlot+'.png')

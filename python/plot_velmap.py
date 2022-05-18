@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """
+@author: Chris Willert (cewdlr)
 
-@author: C.Willert (cewdlr)
+CopyPolicy: 
+    Released under the terms of the LGPLv2.1 or later, see LGPL.TXT
 
 Purpose:
     Plot vector map of recovered velocity field
@@ -12,6 +14,8 @@ import os
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from velmap_utils import ComputeGradients2D,DetectOutliers,InterpolateOutliers
+from ebiv_params import EBIV_Config
+from plot_utils import SetTimesFont
 
 import matplotlib.colors
 def vector_to_rgb(val):
@@ -21,40 +25,29 @@ def vectorColor(arrIN):
     return np.array(list(map(vector_to_rgb, arrIN.flatten() ))).reshape(arrIN.size,3)
 
 #%% Plotting parameters
+SetTimesFont()
 savePlot = 0    # generate output
 contPlot = 1    # add scalar map of velocity magnitude or vorticity
 plotVorticity = 0
 showTitle = 1
 doValidation = 1
-evalModes = ['corr', 'motion', 'piv']
-evalMode = evalModes[0]
 
-vmin = 0
-vmax = 4000
-vecScale = 80
-# todo: these values should be part of data set / maybe use parameter set/dict
-[imgH,imgW] = [720,1280]
-timeSample = [0,10000]
-t_offset = 3000
-timeStep = 5000
-velResol = 0.25
-sampleW = 40
-sampleH = 40
-piv_delay = 2000
+vmin = 0        # minimum pixel velocity
+vmax = 4000     # maximum pixel velocity
+vecScale = 80   # length scaling of vectors
 
 dataDir = '../sample_data/'
-plotDir = dataDir + 'plots/'
-if evalMode in ['corr']:
-    fnStub = 'veldata_t10ms_w40_corr_tau3ms'
-    #fnStub = 'veldata_t10ms_w32_corr_tau3ms'
-else:
-    fnStub = 'veldata_t10ms_w40_motion_res0_25'
+cfgFile = dataDir + 'ebiv_params.cfg'
+cfg = EBIV_Config(cfgFile)
+
+#cfg.evalMethod = 'corr_sum'
+fnStub = cfg.velocityDataFile()
 
 fnIN = dataDir + fnStub + '.npz'
 if not os.path.isfile(fnIN):
     raise IOError('File not found: ' + fnIN)
-if not os.path.exists(plotDir):
-    os.makedirs(plotDir)
+if not os.path.exists(cfg.plotDir):
+    os.makedirs(cfg.plotDir)
     
 # load the data 
 npfile = np.load(fnIN)
@@ -74,7 +67,7 @@ imgEvCnt = velData[:,:,:,5].reshape(nt,ny,nx)
 timeSteps = [0]
 for t_idx in timeSteps:
 
-    fnOUT = plotDir + fnStub
+    fnOUT = cfg.plotDir + fnStub
 
     imgVar2D = imgVar[t_idx,:,:].reshape(ny,nx)
     imgCnt2D = imgEvCnt[t_idx,:,:].reshape(ny,nx)
@@ -135,19 +128,19 @@ for t_idx in timeSteps:
                pivot='mid',
                )
     pad = 15
-    ax1.set_xlim(-pad,imgW+pad)
-    ax1.set_ylim(-pad,imgH+pad)
+    ax1.set_xlim(-pad, cfg.imgW+pad)
+    ax1.set_ylim(-pad, cfg.imgH+pad)
     s = 'Algorithm: Motion compensation - '
     s += '%g ms, %dx%d-sample, resol:%gpx/s, single pass' \
-        % ((timeSample[1]-timeSample[0])/1000, sampleW,sampleH, velResol*1000)
-    if evalMode == 'corr':
+        % (cfg.t_sample/1000, cfg.sampleW,cfg.sampleH, cfg.velResolX*1000)
+    if cfg.evalMethod in ['corr','sum_corr','corr_sum']:
         s = 'Algorithm: Sum-of-correlation - '
         s += '%g ms (%g ms offset) %dx%d-sample, single pass' \
-            % ((timeSample[1]-timeSample[0])/1000, t_offset/1000, sampleW,sampleH)
-    elif evalMode == 'piv':
+            % (cfg.t_sample/1000, cfg.t_sep/1000, cfg.sampleW, cfg.sampleH)
+    elif cfg.evalMethod in ['piv']:
         s = 'Algorithm: Multi-frame PIV - '
         s += '4x %g ms, %dx%d-sample, 50%% overlap, multi-pass' \
-            % ((piv_delay)/1000, sampleW,sampleH)
+            % (cfg.PIV_delay/1000, cfg.sampleW, cfg.sampleH)
     if doValidation:
         s += ', validated'
     else:
@@ -156,7 +149,7 @@ for t_idx in timeSteps:
     ax1.set_ylabel('Y - [pixel]', fontsize=14)
     if showTitle:
         ax1.set_title(s, fontsize=8)
-        timeLabel = ('Time %.2f ms' % (t_idx * timeStep/1000))
+        timeLabel = ('Time %.2f ms' % (t_idx * cfg.t_step/1000))
         xlim = ax1.get_xlim()
         ylim = ax1.get_ylim()
         ax1.text(xlim[0]-0.1*(xlim[1]-xlim[0]), 

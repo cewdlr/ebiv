@@ -1,1 +1,4 @@
 .DS_Store
+sample_data/test.evt
+sample_data/wallflow4_dense_3.evt
+*.pyc
