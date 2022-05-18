@@ -1,0 +1,12 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Event-based imaging velocimetry
+message: 'If you use this software, please cite it as below.'
+type: software
+authors:
+  - given-names: Chris Willert
+    affiliation: DLR
+    email: chris.willert@dlr.de
+    orcid: 'https://orcid.org/0000-0002-1668-0181'
