@@ -13,23 +13,23 @@ Output: Recovered velocity field
 
 ## Publication
 
-[Associated publication] "Event-based Imaging Velocimetry - An Assessment of Event-based Cameras for the Measurement of Fluid Flows"
-(Experiments in Fluids, accepted 24 April 2022, to appear)
+[Associated publication] "Event-based imaging velocimetry: an assessment of event-based cameras for the measurement of fluid flows"
+(Experiments in Fluids 63, Article number 101 (2022), DOI 10.1007/s00348-022-03441-6)
 
-[Submitted preprint] https://arxiv.org/abs/2202.11178
-
+[Open access] https://doi.org/10.1007/s00348-022-03441-6 
 
 ```
-
-@misc{ebiv:2020,
-  title={Event-based Imaging Velocimetry - An Assessment of Event-based Cameras for the Measurement of Fluid Flows},
-  author={Willert, Christian and Klinner, Joachim},
-  year={2022},
-  publisher = {arXiv},  
-  doi = {10.48550/ARXIV.2202.11178},
-  url = {https://arxiv.org/abs/2202.11178}, 
-  keywords = {Fluid Dynamics (physics.flu-dyn), FOS: Physical sciences, FOS: Physical sciences}, 
+@article{EBIV:2022,
+    title = {Event-based imaging velocimetry: an assessment of event-based cameras for the measurement of fluid flows},
+    author = {Willert, Christian and Klinner, Joachim},
+    doi = {10.1007/s00348-022-03441-6},
+    url = {https://doi.org/10.1007/s00348-022-03441-6},
+    journal = {Exp. Fluids},
+    volume = {63},
+    pages = {101},
+    year = {2022},
 }
+
 ```
 
 
