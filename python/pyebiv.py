@@ -466,6 +466,9 @@ class EBIV(object):
     def height(self):
         return _pyebiv.EBIV_height(self)
 
+    def isNull(self):
+        return _pyebiv.EBIV_isNull(self)
+
     def eventCount(self):
         return _pyebiv.EBIV_eventCount(self)
 
@@ -492,6 +495,9 @@ class EBIV(object):
 
     def pseudoImage(self, t0_usec, duration, polarity):
         return _pyebiv.EBIV_pseudoImage(self, t0_usec, duration, polarity)
+
+    def estimatePulseOffsetTime(self, freqInHz, nBinWidthInMicrosec, nPeriods, nStartPeriod):
+        return _pyebiv.EBIV_estimatePulseOffsetTime(self, freqInHz, nBinWidthInMicrosec, nPeriods, nStartPeriod)
 
     def setDebugLevel(self, nLevel):
         return _pyebiv.EBIV_setDebugLevel(self, nLevel)
