@@ -12,9 +12,9 @@ Output: Recovered velocity field
 
 ![VelocityData](https://github.com/cewdlr/ebiv/blob/main/images/wallflow4_dense_3_corr_0010.png)
 
-## Update
+## Updates
 June 2024: 
-- added source code for pyEBIV Python interface
+- added source code for pyEBIV Python interface including compilation instructions for Windows using Visual Studio commandline toolset (VS2022)
 - sample raw data of water jet recorded with pulsed-EBIV including Python script showing pulsed event-data handling
 
 ## Publications
