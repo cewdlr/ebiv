@@ -16,6 +16,18 @@ Output: Recovered velocity field
 June 2024: 
 - added source code for pyEBIV Python interface including compilation instructions for Windows using Visual Studio commandline toolset (VS2022)
 - sample raw data of water jet recorded with pulsed-EBIV including Python script showing pulsed event-data handling
+- added PyBind11-based interface to library
+
+## Installation using PIP
+
+Download and unpack the repository.\
+Open a Python console and navigate to the ./pyebiv directory.\
+Run the following PIP command: 
+
+    pip install .
+
+This assumes that PyBind11 and a suitable build system such as Visual Studio commandline tools are installed. 
+The resulting interface will be copied to the ./site_packages directory of the Python distribution.
 
 ## Publications
 
