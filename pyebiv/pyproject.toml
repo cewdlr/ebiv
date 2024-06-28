@@ -4,3 +4,30 @@ requires = [
     "pybind11>=2.10.0",
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyebiv"
+version = "0.2.0"
+description = "Interface to EBIV library using pybind11"
+readme = "README.md"
+license = {text = "MIT"}
+authors=[{name="Chris Willert", email="chris.willert@dlr.de"}]
+maintainers=[{name="Chris Willert", email="chris.willert@dlr.de"}]
+requires-python = ">=3.9"
+dependencies = ["numpy"]
+keywords = ["pybind11", "cibuildwheel", "c++", "numpy"]
+classifiers=[
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "License :: OSI Approved :: MIT License",
+]
+
+[project.urls]
+Github = "https://github.com/cewdlr/ebiv"

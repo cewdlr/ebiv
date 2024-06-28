@@ -4,7 +4,9 @@
 #include <fstream>
 #include <sstream>
 
+#ifdef _WIN32
 #include <io.h>   // For access().
+#endif
 #include <sys/types.h>  // For stat().
 #include <sys/stat.h>   // For stat().
 #include <string>
@@ -149,6 +151,7 @@ EBI::FileFormat EBI::GetFileType(const std::string& fnIN)
 
 bool EBI::CheckDirectoryExistence(const std::string& dirIN)
 {
+#ifdef _WIN32
 	if (_access(dirIN.c_str(), 0) == 0)
 	{
 		struct stat status;
@@ -169,6 +172,9 @@ bool EBI::CheckDirectoryExistence(const std::string& dirIN)
 	//{
 	//	std::cout << "Path doesn't exist." << endl;
 	//}
+#else 
+	// todo: implement for POSIX...
+#endif
 	return false;
 }
 

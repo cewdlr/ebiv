@@ -1,0 +1,24 @@
+Metadata-Version: 2.1
+Name: pyebiv
+Version: 0.2.0
+Summary: Interface to EBIV library using pybind11
+Home-page: https://github.com/ebiv/
+Author: cewdlr
+Author-email: Chris Willert <chris.willert@dlr.de>
+Maintainer-email: Chris Willert <chris.willert@dlr.de>
+License: MIT
+Project-URL: Github, https://github.com/cewdlr/ebiv
+Keywords: pybind11,cibuildwheel,c++,numpy
+Classifier: Programming Language :: C++
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX :: Linux
+Classifier: License :: OSI Approved :: MIT License
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: numpy

@@ -9,18 +9,19 @@
 namespace py = pybind11;
 #endif
 
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 // Windows Header Files
 #include <windows.h>
+#endif
+
 #include <string>
 #include <vector>
 #include "ebi.h"
-//#include "ebi_image.h"
 
 #ifndef API_CALL
 # define API_CALL /* as nothing... */
 #endif
-
 
 extern void SetDebugLevel(const int nLevel);
 extern int DebugLevel();

@@ -1,7 +1,10 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 
 
-#include <windows.h>
+#ifdef _WIN32
+# include <windows.h>
+#endif
+
 #include "pyebiv.h"
 
 #include "ebi.h"
@@ -54,7 +57,11 @@ extern void DebugPrintExt(const int nLevel, const char* msg, ...)
 	buf[0] = 0;
 	va_list ap;
 	va_start(ap, msg);			// use variable arg list
+#ifdef _WIN32
 	vsprintf_s(buf, _MAX_BUF_SIZE, msg, ap);
+#else
+	vsprintf(buf, msg, ap);
+#endif
 	va_end(ap);
 	printf(buf);
 	printf("\n");
