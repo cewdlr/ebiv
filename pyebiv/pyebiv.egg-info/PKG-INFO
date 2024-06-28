@@ -1,7 +1,0 @@
-Metadata-Version: 2.1
-Name: pyebiv
-Version: 0.2
-Summary: EBIV interface using pybind11
-Home-page: https://github.com/ebiv/
-Author: cewdlr
-Requires-Python: >=3.9
