@@ -24,16 +24,16 @@ namespace std {
 
 // definition for function EBIV.size()
 // returns [imgH,imgW]
-%typemap(out) int* sensorSize {
-  int i;
-  //$1, $1_dim0, $1_dim1
-  $result = PyList_New(2);
-  for (i = 0; i < 2; i++) {
-    PyObject *o = PyLong_FromLong((long) $1[i]);
-    PyList_SetItem($result,i,o);
-  }
-  //delete $1; // Important to avoid a leak since you called new
-}
+//%typemap(out) int* sensorSize {
+//  int i;
+//  //$1, $1_dim0, $1_dim1
+//  $result = PyList_New(2);
+//  for (i = 0; i < 2; i++) {
+//    PyObject *o = PyLong_FromLong((long) $1[i]);
+//    PyList_SetItem($result,i,o);
+//  }
+//  //delete $1; // Important to avoid a leak since you called new
+//}
 
 
 // definition for putData()

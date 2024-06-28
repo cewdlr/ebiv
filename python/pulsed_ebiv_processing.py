@@ -15,6 +15,8 @@ Purpose:
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+from time import time 
+
 from pyebiv import EBIV
 
 # location of event data
@@ -27,10 +29,15 @@ if not os.path.exists(fnRAW):
 evtData = EBIV(fnRAW)
 print('Number of events: ' + str(evtData.eventCount()))
 
+# note: the swig-based version is 10x faster in accessing the data
+t0 = time()
 evPol = np.array(evtData.p())
 evX = np.array(evtData.x())
 evY = np.array(evtData.y())
 evT = np.array(evtData.time())
+t1 = time()
+print('data access time: %g s' %(t1-t0))
+
 # only look at positive events
 posEvents = np.where(evPol == 1)
 posX = evX[posEvents]

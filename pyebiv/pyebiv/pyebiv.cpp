@@ -1,4 +1,6 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
+
+
 #include <windows.h>
 #include "pyebiv.h"
 
@@ -10,6 +12,13 @@
 #include <ostream>
 #include <iostream>
 using namespace std;
+
+#ifdef PYBIND11_old
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h> // for std::vector
+#include <pybind11/stl_bind.h>
+#include <pybind11/numpy.h>
+#endif
 
 #define _MAX_BUF_SIZE 4096
 
@@ -65,6 +74,9 @@ extern void SetDebugLevel(const int nLevel)
 }
 
 
+// pybind stuff
+
+
 /*
 Implementation of the EBIV class
 */
@@ -99,16 +111,13 @@ void EBIV::setDebugLevel(const int32_t nLevel)
 void EBIV::init()
 {
 	m_nImgWidth = m_nImgHeight = 0;
-	m_imgDim[0] = 0;
-	m_imgDim[1] = 0;
 	m_nDebugLevel = 0;
 }
 
-int* EBIV::sensorSize()
+std::vector<int32_t> EBIV::sensorSize()
 {
-	m_imgDim[1] = m_nImgWidth;
-	m_imgDim[0] = m_nImgHeight;
-	return m_imgDim;
+	std::vector<int32_t> v = {m_nImgHeight, m_nImgWidth};	
+	return v;
 }
 
 bool EBIV::isNull()
@@ -185,15 +194,24 @@ bool EBIV::loadRaw(const std::string& strFileName)
 //}
 
 /*!
-* \return events as int vector of length N*4
+* \return events as int vector of length N*4 grouped as (t,x,y,p)
 */
 std::vector<int32_t> EBIV::events()
 {
+	// std::vector<EBI::Event> v;
+	// if (m_evData.isNull())
+	// 	return v;
+
+	//std::cout << "copying events to vector Nx4: " << (n) << std::endl;
+	// size_t N = m_evData.dataRef().size();
+	// v.resize(N);
+	// for (size_t i = 0; i < N; i++) {
+	// 	v[i] = m_evData.dataRef()[i];
+	// }
 	std::vector<int32_t> v;
 	if (m_evData.isNull())
 		return v;
 
-	//std::cout << "copying events to vector Nx4: " << (n) << std::endl;
 	size_t N = m_evData.data().size();
 	v.resize(N*4);
 	size_t ii = 0;
@@ -229,6 +247,7 @@ std::vector<int32_t> EBIV::x()
 {
 	/*!
 	* \return event x-positions as int vector
+	* (Not very efficient because it returns a copy)
 	*/
 	std::vector<int32_t> v;
 	if (m_evData.isNull())
@@ -245,6 +264,7 @@ std::vector<int32_t> EBIV::y()
 {
 	/*!
 	* \return event y-positions as int vector
+	* (Not very efficient because it returns a copy)
 	*/
 	std::vector<int32_t> v;
 	if (m_evData.isNull())
@@ -259,6 +279,7 @@ std::vector<int32_t> EBIV::y()
 
 /*!
 * \return event polarities as int vector
+	* (Not very efficient because it returns a copy)
 */
 std::vector<int32_t> EBIV::p()
 {
@@ -309,6 +330,35 @@ std::vector<float> EBIV::pseudoImage(
 	return v;
 }
 
+#ifdef PYBIND11_old
+	py::array_t<double> EBIV::pseudoImagePyBind(const int32_t t0_usec, const int32_t duration, const int32_t polarity)
+	{
+		int32_t _w = EBIV::width();
+		int32_t _h = EBIV::height();
+		size_t size = _w * _h;
+		std::cout << "pseudoImagePyBind() allocating: " << _h  << "H x " << _w << "W" << std::endl;
+		double *foo = new double[size];
+		for (size_t i = 0; i < size; i++) {
+			foo[i] = (double) i;
+		}
+		// Create a Python object that will free the allocated
+		// memory when destroyed:
+		py::capsule free_when_done(foo, [](void *f) {
+			double *foo = reinterpret_cast<double *>(f);
+			std::cerr << "Element [0] = " << foo[0] << "\n";
+			std::cerr << "freeing memory @ " << f << "\n";
+			delete[] foo;
+		});
+		return py::array_t<double>(
+			{ _h, _w}, // shape
+			{_w*8, 8}, // C-style contiguous strides for float
+			foo, // the data pointer
+			free_when_done
+			); // numpy array references this parent
+	}
+#endif
+
+
 int32_t EBIV::estimatePulseOffsetTime(
 	const double freqInHz,		//!< sampling frequency in [Hz] = light pulsing frequency
 	const int32_t nBinWidth,	//!< in [usec] - value around 5-20usec to start
@@ -323,5 +373,23 @@ int32_t EBIV::estimatePulseOffsetTime(
 		return 0;
 	}
 	return EBI::DetermineOffsetTime(
+		m_evData, freqInHz, nBinWidth, nPeriods, nStartPeriod, m_nDebugLevel);
+}
+
+std::vector<double> EBIV::meanPulseHistogram(
+	const double freqInHz,		//!< sampling frequency in [Hz] = light pulsing frequency
+	const int32_t nBinWidth,	//!< in [usec] - value around 5-20usec to start
+	const int32_t nPeriods,		//!< number of periods to sample (20-100)
+	const int32_t nStartPeriod	//!< at which period to begin sampling (determines offset in data set)
+)
+{
+	std::vector<double> v;
+	if (m_evData.isNull()) {
+		if (m_nDebugLevel > 0) {
+			std::cout << "ERROR - data is null!" << std::endl;
+		}
+		return v;
+	}
+	return EBI::MeanPulseHistogram(
 		m_evData, freqInHz, nBinWidth, nPeriods, nStartPeriod, m_nDebugLevel);
 }

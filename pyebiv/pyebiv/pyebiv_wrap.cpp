@@ -12473,7 +12473,7 @@ SWIGINTERN PyObject *_wrap_EBIV_sensorSize(PyObject *self, PyObject *args) {
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject *swig_obj[1] ;
-  int *result = 0 ;
+  std::vector< int32_t,std::allocator< int32_t > > result;
   
   (void)self;
   if (!args) SWIG_fail;
@@ -12483,17 +12483,8 @@ SWIGINTERN PyObject *_wrap_EBIV_sensorSize(PyObject *self, PyObject *args) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EBIV_sensorSize" "', argument " "1"" of type '" "EBIV *""'"); 
   }
   arg1 = reinterpret_cast< EBIV * >(argp1);
-  result = (int *)(arg1)->sensorSize();
-  {
-    int i;
-    //result, result_dim0, result_dim1
-    resultobj = PyList_New(2);
-    for (i = 0; i < 2; i++) {
-      PyObject *o = PyLong_FromLong((long) result[i]);
-      PyList_SetItem(resultobj,i,o);
-    }
-    //delete result; // Important to avoid a leak since you called new
-  }
+  result = (arg1)->sensorSize();
+  resultobj = swig::from(static_cast< std::vector< int,std::allocator< int > > >(result));
   return resultobj;
 fail:
   return NULL;
@@ -12722,6 +12713,61 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_EBIV_meanPulseHistogram(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  EBIV *arg1 = (EBIV *) 0 ;
+  double arg2 ;
+  int32_t arg3 ;
+  int32_t arg4 ;
+  int32_t arg5 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  double val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  int val4 ;
+  int ecode4 = 0 ;
+  int val5 ;
+  int ecode5 = 0 ;
+  PyObject *swig_obj[5] ;
+  std::vector< double,std::allocator< double > > result;
+  
+  (void)self;
+  if (!SWIG_Python_UnpackTuple(args, "EBIV_meanPulseHistogram", 5, 5, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_EBIV, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EBIV_meanPulseHistogram" "', argument " "1"" of type '" "EBIV *""'"); 
+  }
+  arg1 = reinterpret_cast< EBIV * >(argp1);
+  ecode2 = SWIG_AsVal_double(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "EBIV_meanPulseHistogram" "', argument " "2"" of type '" "double""'");
+  } 
+  arg2 = static_cast< double >(val2);
+  ecode3 = SWIG_AsVal_int(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "EBIV_meanPulseHistogram" "', argument " "3"" of type '" "int32_t""'");
+  } 
+  arg3 = static_cast< int32_t >(val3);
+  ecode4 = SWIG_AsVal_int(swig_obj[3], &val4);
+  if (!SWIG_IsOK(ecode4)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "EBIV_meanPulseHistogram" "', argument " "4"" of type '" "int32_t""'");
+  } 
+  arg4 = static_cast< int32_t >(val4);
+  ecode5 = SWIG_AsVal_int(swig_obj[4], &val5);
+  if (!SWIG_IsOK(ecode5)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "EBIV_meanPulseHistogram" "', argument " "5"" of type '" "int32_t""'");
+  } 
+  arg5 = static_cast< int32_t >(val5);
+  result = (arg1)->meanPulseHistogram(arg2,arg3,arg4,arg5);
+  resultobj = swig::from(static_cast< std::vector< double,std::allocator< double > > >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_EBIV_setDebugLevel(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   EBIV *arg1 = (EBIV *) 0 ;
@@ -12906,6 +12952,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "EBIV_p", _wrap_EBIV_p, METH_O, NULL},
 	 { "EBIV_pseudoImage", _wrap_EBIV_pseudoImage, METH_VARARGS, NULL},
 	 { "EBIV_estimatePulseOffsetTime", _wrap_EBIV_estimatePulseOffsetTime, METH_VARARGS, NULL},
+	 { "EBIV_meanPulseHistogram", _wrap_EBIV_meanPulseHistogram, METH_VARARGS, NULL},
 	 { "EBIV_setDebugLevel", _wrap_EBIV_setDebugLevel, METH_VARARGS, NULL},
 	 { "EBIV_swigregister", EBIV_swigregister, METH_O, NULL},
 	 { "EBIV_swiginit", EBIV_swiginit, METH_VARARGS, NULL},

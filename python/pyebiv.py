@@ -492,6 +492,9 @@ class EBIV(object):
     def estimatePulseOffsetTime(self, freqInHz, nBinWidthInMicrosec, nPeriods, nStartPeriod):
         return _pyebiv.EBIV_estimatePulseOffsetTime(self, freqInHz, nBinWidthInMicrosec, nPeriods, nStartPeriod)
 
+    def meanPulseHistogram(self, freqInHz, nBinWidthInMicrosec, nPeriods, nStartPeriod):
+        return _pyebiv.EBIV_meanPulseHistogram(self, freqInHz, nBinWidthInMicrosec, nPeriods, nStartPeriod)
+
     def setDebugLevel(self, nLevel):
         return _pyebiv.EBIV_setDebugLevel(self, nLevel)
 

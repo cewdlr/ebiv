@@ -9,8 +9,9 @@
 # include "tiffio.h"
 #endif
 
-#include "ebi_structs.h"
-#include "ebi_data.h"
+#include "ebi.h"
+//#include "ebi_structs.h"
+//#include "ebi_data.h"
 
 namespace EBI {
 
