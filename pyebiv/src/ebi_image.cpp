@@ -371,7 +371,7 @@ bool EBI::EventImage::binarize(const int nMaxInt)
 	}
 	for (size_t i = 0; i < (m_imgWidth * m_imgHeight); i++) {
 		if (m_imgData[i] > 0) {
-			m_imgData[i] = nMaxInt;
+			m_imgData[i] = static_cast<float>(nMaxInt);
 		}
 	}
 	return true;

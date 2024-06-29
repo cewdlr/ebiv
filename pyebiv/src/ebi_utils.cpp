@@ -304,58 +304,8 @@ int32_t EBI::DetermineOffsetTime(
 	const int32_t nDebug		//!< enables debugging output
 )
 {
-	// todo: much of the following is provided by EBI::MeanPulseHistorgram()
-	double period = 1e6 / freqInHz;
-	int32_t nBins = int(period / nBinWidth);
-	std::vector<double> histData;
-	histData.resize(nBins);
-	for (size_t i = 0; i < nBins; i++)
-		histData[i] = 0;
-	int32_t t0 = int32_t(period * nStartPeriod);	// start on some time into data set
-	int32_t sampleTime = int32_t(nPeriods * period);
-	// get N samples
-	EBI::EventData evSlab(evData, EBI::EventPolarity::PolarityPositive, t0, sampleTime); // use only positive events
-
-	EBI::Event ev0 = evSlab.data()[0];
-	EBI::Event evN = evSlab.data().back();
-
-	if (nDebug>0)
-		std::cout << "Subset of events starting at " << t0 << " usec" << std::endl
-			<< "event count  " << evSlab.data().size() << std::endl
-			<< "first event  " << ev0.t << " usec" << std::endl
-			<< "last event   " << evN.t << " usec" << std::endl
-			<< "frequency    " << freqInHz << " Hz" << std::endl
-			<< "period       " << period << " usec" << std::endl
-			<< "bin width    " << nBinWidth << " usec" << std::endl
-			<< "start time   " << t0 << " usec" << std::endl;
-	for (EBI::Event ev : evSlab.data()) {
-		// find remainder
-		double curTime = ev.t + t0;
-		double relTime = floor(curTime / period);
-		double rem = floor(curTime - (relTime * period));
-
-		// find the bin
-		int32_t bin = static_cast<int32_t>(rem / nBinWidth);
-		if ((bin >= 0) && (bin < histData.size())) {
-			histData[bin]++;
-		}
-	}
-
-	// normalize to get events/microsecond
-	for (size_t i = 0; i < histData.size(); i++) {
-		histData[i] /= (nPeriods * nBinWidth);;
-	}
-
-	if (nDebug > 1) {
-		double numEvents = 0;
-		std::cout << " --- [Bin] ----- [count] ---" << std::endl;
-		for (size_t i = 0; i < histData.size(); i++) {
-			std::cout << "    " << (i*nBinWidth) << " usec  -->  " 
-				<< (histData[i]) << std::endl;
-			numEvents += histData[i];
-		}
-		std::cout << "mean events per period: " << numEvents << std::endl;
-	}
+	std::vector<double> histData = EBI::MeanPulseHistogram(
+		evData, freqInHz, nBinWidth, nPeriods, nDebug);
 
 	int32_t bestStartTime = 0;
 	int32_t maxIdx = 0;
