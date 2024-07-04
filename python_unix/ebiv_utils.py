@@ -51,7 +51,7 @@ def EBILoadEvents(
         #num_bytes = binary_file.tell()  # Get the file size
         #print('file size: '+str(num_bytes))
         binary_file.seek(0)
-        header = binary_file.read( 48 )
+        header = binary_file.read( 64 )
         sig, fileSize, eventCnt, timeStamp, duration, hdrLen, w, h =\
             unpack('4s3Q4L',header)
         if not (sig == b'EVT3'):
